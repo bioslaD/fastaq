@@ -13,7 +13,10 @@ struct BufRef
   size_t length;
   auto value(B)(B buf)
   {
+    import std.stdio: writeln;
+    writeln("Pos ", pos, " buf len: ", buf.length);
     assert(pos <= buf.length);
+    writeln("Pos ", pos, " length: ", length,  " buf len: ", buf.length);
     assert(pos + length <= buf.length);
     return buf[pos .. pos + length];
   }

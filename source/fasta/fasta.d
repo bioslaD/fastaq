@@ -41,6 +41,7 @@ import iopipe.textpipe;
 private import std.traits;
 private import std.range.primitives;
 private import std.algorithm : find, splitter, filter;
+private import std.regex;
 private import std.conv: to;
 private import std.string : stripLeft, stripRight, strip;
 import fastaq.common.utils;
@@ -167,7 +168,8 @@ unittest
         " ACG \n";
 
     auto tokenizer = input.tokenParser;
-    auto item1 = tokenizer.nextToken;
+    FastaToken item1;
+    item1 = tokenizer.nextToken;
     assert(item1.entryid.value(tokenizer.window) == "EntryId1");
     assert(item1.fields.length == 3);
     assert(item1.fields[0].value(tokenizer.window) == "field1");
@@ -207,4 +209,50 @@ unittest
     assert(concrete.fields[1] == "field5");
     seq = concrete.sequence;
     assert(seq.filter!(a => !a.isWhite).to!string == "ACGTACG", "Expected: ACGTACG, got: " ~ seq);
+
+    import std.stdio;
+    auto tokenizer2 = input.tokenParser;
+    alias ChainType = typeof(tokenizer2);
+    writeln(typeof(tokenizer2).stringof);
+    writeln("isIopipe: ", isIopipe!ChainType);
+    auto r = FastaRange!ChainType(tokenizer2, tokenizer2.nextToken);
+    writeln("r type: ", typeof(r).stringof);
+    writeln(r.front.entryid);
+    auto tkz2i1 = r.front;
+    assert(r.front.entryid == "EntryId1", "Got: " ~ r.front.entryid);
 }
+
+struct FastaRange(Chain)
+{
+  private Chain chain; // the source parser
+  private FastaToken tok; // the buffer reference
+  @property auto front() {
+    return tok.value(chain.window);
+  }
+  bool empty() { return tok.endPos == 0; }
+  void popFront()
+  {
+    chain.release(tok.endPos);
+    tok = chain.nextToken;
+  }
+}
+
+unittest {
+
+}
+/**
+ Filter a FASTA entries based on regex string
+
+ Params:
+     c = a chain of FastaToken type that has been instantiated with tokenParser
+     re = a string inform of a regex
+     idOnly = a boolean to filter on only ID part or not
+*/
+// auto faFilter(Chain)(Chain c, string re, bool idOnly = true)
+// {
+//   auto r = regex(re);
+//   if (idOnly)
+//     {
+//       if (fe.valuematchFirst)
+//     }
+// }
